@@ -108,3 +108,26 @@ class TestDiffusione(unittest.TestCase):
 
         # 5. Verifica: controlliamo che le due somme siano uguali.
         self.assertEqual(somma_iniziale, somma_finale)
+
+
+    def test_simula_turno_lettura_popolazione_iniziale(self):
+        """
+        Verifica che il metodo simula_turno modifichi effettivamente il valore della popolazione
+        nella cella specificata, partendo da una popolazione iniziale definita.
+        """
+        # 1. Definiamo la popolazione e la posizione def test_simula_turno_lettura_popolazionda testare.
+        popolazione_iniziale = 1000
+        riga_iniziale = 3
+        colonna_iniziale = 3
+        
+        # 2. Impostiamo la popolazione sulla griglia prima di iniziare la simulazione.
+        self.mappa.imposta_popolazione_iniziale(popolazione_iniziale, riga_iniziale, colonna_iniziale)
+
+        # 3. Chiamiamo il metodo che vogliamo testare.
+        self.simulazione.simula_turno()
+
+        # 4. Rileggiamo il valore della popolazione dopo il turno.
+        popolazione_dopo_turno = self.mappa.griglia[riga_iniziale][colonna_iniziale]
+
+        # 5. Verifica: controlliamo che il valore della polazione sia diminuito .
+        self.assertLess(popolazione_dopo_turno, popolazione_iniziale)
