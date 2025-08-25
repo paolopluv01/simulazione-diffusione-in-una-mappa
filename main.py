@@ -1,30 +1,37 @@
 # main.py
 
+import time
 from mappa import Mappa
 from diffusione import Diffusione
+from visualizer import Mapper
+from bokeh.plotting import curdoc
 
-if __name__ == "__main__":
-    # 1. Creazione degli oggetti
-    mappa_simulazione = Mappa()
-    simulazione = Diffusione(mappa_simulazione)# l'oggetto Diffusione prende come parametro l'oggetto Mappa
+# 1. Creazione delle istanze
+dimensione_mappa = 10
+mappa_simulazione = Mappa(dimensione_mappa)
+simulazione = Diffusione(mappa_simulazione)
 
-    # 2. Impostazione della popolazione iniziale
-    popolazione_iniziale = 400
-    riga_partenza, colonna_partenza = 2, 2
-    mappa_simulazione.imposta_popolazione_iniziale(popolazione_iniziale, riga_partenza, colonna_partenza)
+# 2. Impostazione della popolazione iniziale
+popolazione_iniziale = 1000
+mappa_simulazione.imposta_popolazione_iniziale(popolazione_iniziale, 5, 5)
 
-    print("Mappa iniziale:")
-    mappa_simulazione.stampa_mappa()
-    print("-" * 20)
+# 3. Creazione del visualizzatore e del ColumnDataSource
+visualizzatore = Mapper(mappa_simulazione)
+source = visualizzatore.crea_data_source() # Creiamo un nuovo metodo per questo
+p = visualizzatore.crea_figura_mappa(source) # Anche qui, creiamo un nuovo metodo
 
-    # 3. Esecuzione della simulazione con un ciclo while
-    turno = 0
-    # La simulazione continua finché la mappa non è piena
-    while not simulazione.controllo_mappa_piena():
+# 4. Funzione di aggiornamento
+def aggiorna():
+    if not simulazione.controllo_mappa_piena():
         simulazione.simula_turno()
-        turno += 1
-        print(f"\nMappa dopo il turno {turno}:")
-        mappa_simulazione.stampa_mappa()
-        print("-" * 20)
-    
-    print("\nSimulazione terminata: la popolazione si è diffusa su tutta la mappa.")
+        # Aggiorniamo i dati della sorgente
+        nuova_popolazione = visualizzatore.get_lista_piatta()
+        source.data['popolazione'] = nuova_popolazione
+    else:
+        # Se la simulazione è finita, rimuoviamo la funzione di aggiornamento
+        curdoc().remove_periodic_callback(callback)
+        print("Simulazione terminata!")
+
+# 5. Collegamento della funzione al documento di Bokeh
+curdoc().add_root(p)
+callback = curdoc().add_periodic_callback(aggiorna, 500) # Aggiorna ogni 500ms
