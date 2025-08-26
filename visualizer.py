@@ -1,56 +1,80 @@
-from xml.sax import _Source
-from bokeh.plotting import figure, show
-from bokeh.transform import linear_cmap
+from bokeh.plotting import figure
+from bokeh.palettes import Greys, Magma
 from bokeh.models import ColumnDataSource
-from bokeh.palettes import Greens9
-from bokeh.io import curdoc
+from bokeh.transform import factor_cmap
 from mappa import Mappa
-
-# la classe Mapper prende come parametro l'oggetto Mappa
 
 
 class Mapper:
-   def __init__(self, mappa_da_visualizzare):
+    def __init__(self, mappa_da_visualizzare):
         self.mappa = mappa_da_visualizzare
         self.dimensione = mappa_da_visualizzare.dimensione
-        self.source = _Source
+        self.source = self.crea_data_source()
+        self.figura = self.crea_figura_mappa()
 
-        def crea_data_source(self):
-            # 1. Chiamiamo il tuo metodo per ottenere i dati.
-            lista_piatta = self.get_lista_piatta()
-            x = []
-            y = []
-            for i in range(self.dimensione):
-                for j in range(self.dimensione):
-                    x.append(j)
-                    y.append(i)
-            # 2. Creiamo e ritorniamo il ColumnDataSource.
-            source = ColumnDataSource(
-                data=dict(x=x, y=y, popolazione=lista_piatta))
-            return source
-    # Aggiungi il metodo get_lista_piatta per ottenere i dati della mappa.
+    def get_lista_piatta(self):
+        lista_piatta = []
+        for riga in self.mappa.griglia:
+            for val in riga:
+                lista_piatta.append(val)
+        return lista_piatta
 
-        def get_lista_piatta(self):
-            lista_piatta = []
-            for riga in self.mappa.griglia:
-                for val in riga:
-                    lista_piatta.append(val)
-            return lista_piatta
+    def crea_mappa_categorie_colore(self, valori_popolazione):
+        # Definisci le tue categorie in base ai valori di popolazione
+        categorie = []
+        for valore in valori_popolazione:
+            if 0 < valore <= 10:
+                categorie.append('0-10')
+            elif 10 < valore <= 30:
+                categorie.append('11-30')
+            elif 30 < valore <= 50:
+                categorie.append('31-50')
+            elif 50 < valore <= 80:
+                categorie.append('51-80')
+            elif 80 < valore <= 120:
+                categorie.append('81-120')
+            # Aggiungi altre categorie se necessario    
+            else:
+                categorie.append('120+')
+        return categorie
 
-        def crea_figura_mappa(self):
+    def crea_data_source(self):
+        lista_piatta = self.get_lista_piatta()
+        # Calcola le categorie di colore
+        categorie_colore = self.crea_mappa_categorie_colore(lista_piatta)
+        x = []
+        y = []
+        for i in range(self.dimensione):
+            for j in range(self.dimensione):
+                x.append(j + 0.5)  # Aggiungi 0.5 per trovare il centro
+                y.append(i + 0.5)  # Aggiungi 0.5 per trovare il centro
+        source = ColumnDataSource(
+            data=dict(x=x, y=y, popolazione=lista_piatta, categoria_colore=categorie_colore))
+        return source
 
-            # 3. Creiamo una lista di dizionari per specificare la posizione di ogni cella.
-            x = []
-            y = []
-            for i in range(self.dimensione):
-                for j in range(self.dimensione):
-                    x.append(j)
-                    y.append(i)
+    def crea_figura_mappa(self):
+        p = figure(title="Mappa della popolazione",
+                   x_range=(0, self.dimensione),
+                   y_range=(0, self.dimensione),
+                   tools="hover",
+                   tooltips=[("Popolazione", "@popolazione")],
+                   match_aspect=True)
 
-            # 4. Creiamo la figura di Bokeh.
-            p = figure(title="Mappa della popolazione", x_range=(0, self.dimensione), y_range=(0, self.dimensione),
-                       tools="hover", tooltips=("Popolazione", "@popolazione"), match_aspect=True)
+        # Mappa i valori di popolazione a una scala di colori
+        color_mapper = factor_cmap(field_name='categoria_colore',
+                                   # Scegli una palette con lo stesso numero di categorie
+                                   palette = Greys[6],
+                                   factors=['0-10', '11-30', '31-50', '51-80', '81-120', '120+'])
 
-            color = linear_cmap("popolazione", Greens9, 0, self.dimensione**2)
-            p.rect(x="x", y="y", width=1, height=1, source=_Source,
-                   fill_color=color, line_color="black")
+        p.rect(x="x", y="y",
+               width=1, height=1,
+               source=self.source,
+               fill_color=color_mapper,  # Usa la nuova mappa di colore
+               line_color="green")
+
+        return p
+
+    def aggiorna_figura(self):
+        nuova_popolazione = self.get_lista_piatta()
+        self.source.data['popolazione'] = nuova_popolazione
+        self.source.data['categoria_colore'] = self.crea_mappa_categorie_colore(nuova_popolazione)
