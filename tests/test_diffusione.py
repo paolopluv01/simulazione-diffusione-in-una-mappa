@@ -1,6 +1,6 @@
 import unittest
 from mappa import Mappa
-from diffusione import Diffusione
+from diffusione import Diffusione # Assumiamo che Diffusione sia la classe che implementa la logica di diffusione.
 
 class TestDiffusione(unittest.TestCase):
 
