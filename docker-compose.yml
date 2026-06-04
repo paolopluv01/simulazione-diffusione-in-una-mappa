@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  simulazione:
+    build: .
+    container_name: simulazione-diffusione
+    ports:
+      - "5006:5006"
+    environment:
+      - BOKEH_RESOURCES=inline
+    volumes:
+      - .:/app
+    networks:
+      - simulazione-network
+    # Riavvia automaticamente se fallisce
+    restart: unless-stopped
+
+networks:
+  simulazione-network:
+    driver: bridge
